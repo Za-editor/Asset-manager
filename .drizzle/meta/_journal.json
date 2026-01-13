@@ -8,6 +8,13 @@
       "when": 1768306041433,
       "tag": "0000_parched_sentinel",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1768332130931,
+      "tag": "0001_omniscient_silk_fever",
+      "breakpoints": true
     }
   ]
 }
