@@ -66,7 +66,7 @@ export async function getAllCategorisAction() {
     return await db.select().from(category).orderBy(category.name);
   } catch (error) {
     console.log(error);
-    return []
+    return [];
   }
 }
 
@@ -79,11 +79,35 @@ export async function getTotalUsersCountAction() {
     throw new Error("Unauthorized");
   }
 
-    try {
-        const result = await db.select({ count: sql<number>`count(*)` }).from(user);
-        return result[0]?.count || 0;
+  try {
+    const result = await db.select({ count: sql<number>`count(*)` }).from(user);
+    return result[0]?.count || 0;
   } catch (error) {
     console.log(error);
-    return 0
+    return 0;
+  }
+}
+
+export async function deleteCategoryAction(categoryId: number) {
+  const session = await auth.api.getSession({
+    headers: await headers(),
+  });
+
+  if (!session?.user || session.user.role !== "admin") {
+    throw new Error("Unauthorized");
+  }
+  try {
+    await db.delete(category).where(eq(category.id, categoryId));
+    revalidatePath("/admin/settings");
+        return {
+          success: true,
+          message: "Category Deleted Successfully",
+        };
+  } catch (error) {
+    console.log(error);
+    return {
+      success: false,
+      message: "Failed to delete category",
+    };
   }
 }
