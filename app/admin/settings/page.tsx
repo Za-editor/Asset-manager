@@ -1,5 +1,5 @@
 import { getAllCategorisAction, getTotalUsersCountAction } from "@/actions/admin-actions";
-import CategoryManager from "@/components/admin/category";
+import CategoryManager from "@/components/admin/category-manager";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Users } from "lucide-react";
 

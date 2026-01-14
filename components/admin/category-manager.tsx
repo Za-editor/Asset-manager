@@ -5,6 +5,7 @@ import { Button } from "../ui/button";
 import { Input } from "../ui/input";
 import { Label } from "../ui/label";
 import { useState } from "react";
+import { addNewCategoryAction } from "@/actions/admin-actions";
 
 type Category = {
   id: number;
@@ -27,8 +28,23 @@ function CategoryManager({
           try {
              const formData = new FormData();
              formData.append("name", newCategoryName);
+             const result = await addNewCategoryAction(formData)
 
-          } catch (error) { }
+            if (result.success) {
+              const newCategory = {
+                id: Math.max(0, ...categories.map(c => c.id)) + 1,
+                name: newCategoryName,
+                createdAt: new Date()
+              }
+
+              setCategories([...categories, newCategory])
+              setNewCategoryName("")
+            }
+            
+          } catch (error) {
+            console.log(error);
+            
+           }
       }
   return (
     <div className="space-y-6">
