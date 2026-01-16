@@ -14,7 +14,7 @@ export async function POST(request: Request) {
     const signature = cloudinary.utils.api_sign_request(
       {
         timestamp,
-        folder: "asset manager",
+        folder: "Asset Manager",
       },
       process.env.CLOUDINARY_API_SECRET as string
     );

@@ -3,7 +3,6 @@
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
@@ -22,6 +21,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "../ui/select";
+import { timeStamp } from "console";
 
 type Category = {
   id: number;
@@ -36,6 +36,12 @@ type FormState = {
   file: File | null;
 };
 
+type ClodinarySignature = {
+  signature: string;
+  timestamp: number;
+  apiKey: string;
+};
+
 interface UploadDialogProps {
   categories: Category[];
 }
@@ -43,7 +49,7 @@ interface UploadDialogProps {
 function UploadAsset({ categories }: UploadDialogProps) {
   const [open, setOpen] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
-  const [uploadProgessStatus, setUloadProgessStatus] = useState(0);
+  const [uploadProgessStatus, setUploadProgessStatus] = useState(0);
   const [formState, setFormState] = useState<FormState>({
     title: "",
     description: "",
@@ -67,10 +73,81 @@ function UploadAsset({ categories }: UploadDialogProps) {
     if (file) {
       setFormState((prev) => ({ ...prev, file }));
     }
-    };
-    
-    console.log(formState);
-    
+  };
+
+  async function getCloudinarySignature(): Promise<ClodinarySignature> {
+    const timestamp = Math.round(new Date().getTime() / 1000);
+    const response = await fetch("/api/cloudinary/signature", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ timestamp }),
+    });
+    if (!response.ok) {
+      throw new Error("Failed to create cloudinary signature");
+    }
+
+    return response.json();
+  }
+
+  const handleAssetUpload = async (event: React.FormEvent) => {
+    event.preventDefault();
+    setIsUploading(true);
+    setUploadProgessStatus(0);
+    try {
+      const { signature, apiKey, timestamp } = await getCloudinarySignature();
+      const cloudinaryData = new FormData();
+      cloudinaryData.append("file", formState.file as File);
+      cloudinaryData.append("api_key", apiKey);
+      cloudinaryData.append("timestamp", timestamp.toString());
+      cloudinaryData.append("signature", signature);
+      cloudinaryData.append("folder", "Asset Manager");
+
+      const xhr = new XMLHttpRequest();
+      xhr.open(
+        "POST",
+        `https://api.cloudinary.com/v1_1/${process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME}/auto/upload`
+      );
+
+      xhr.upload.onprogress = (event) => {
+        if (event.lengthComputable) {
+          const progress = Math.round((event.loaded / event.total) * 100);
+          setUploadProgessStatus(progress);
+        }
+      };
+
+      const cloudinaryPromise = new Promise<any>((resolve, reject) => {
+        xhr.onload = () => {
+          if (xhr.status >= 200 && xhr.status < 300) {
+            const response = JSON.parse(xhr.responseText);
+            resolve(response);
+          } else {
+            reject(new Error("Upload to cloudinary failed"));
+          }
+        };
+        xhr.onerror = () => reject(new Error("Upload to cloudinary failed"));
+
+        // Move xhr.send() INSIDE the Promise constructor
+        xhr.send(cloudinaryData);
+      });
+
+      const cloudinaryResponse = await cloudinaryPromise;
+      const formData = new FormData();
+
+      formData.append("title", formState.title);
+      formData.append("description", formState.description);
+      formData.append("categoryId", formState.categoryId);
+      formData.append("fileUrl", cloudinaryResponse.secure_url);
+      formData.append("thumbnailUrl", cloudinaryResponse.secure_url);
+
+      //upload this asset to
+    } catch (e) {
+      console.error("Upload failed:", e);
+      setIsUploading(false);
+    }
+  };
+
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
@@ -83,7 +160,7 @@ function UploadAsset({ categories }: UploadDialogProps) {
         <DialogHeader>
           <DialogTitle>Upload New Asset</DialogTitle>
         </DialogHeader>
-        <form action="" className="space-y-5">
+        <form onSubmit={handleAssetUpload} className="space-y-5">
           <div className="space-y-2">
             <Label htmlFor="title">Title</Label>
             <Input
