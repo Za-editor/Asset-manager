@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import { Badge } from "../ui/badge";
+import { formatDistanceToNow } from "date-fns";
 
 type Asset = {
   id: string;
@@ -56,7 +57,11 @@ function AssetGrid({ assets }: AssetGridProps) {
               <p className="text-xs text-slate-500">{asset.description}</p>
             )}
             <div className="flex justify-between items-center mt-3">
-              <span className></span>
+              <span className="text-xs text-slate-100">
+                {formatDistanceToNow(new Date(asset.createdAt), {
+                  addSuffix: true,
+                })}
+              </span>
             </div>
           </div>
         </div>
