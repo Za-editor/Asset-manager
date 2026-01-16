@@ -22,6 +22,7 @@ import {
   SelectValue,
 } from "../ui/select";
 import { timeStamp } from "console";
+import { uploadAssetAction } from "@/actions/dashboard-actions";
 
 type Category = {
   id: number;
@@ -142,9 +143,25 @@ function UploadAsset({ categories }: UploadDialogProps) {
       formData.append("thumbnailUrl", cloudinaryResponse.secure_url);
 
       //upload this asset to
+
+      const result = await uploadAssetAction(formData);
+      if (result.success) {
+        setOpen(false);
+        setFormState({
+          title: "",
+          description: "",
+          categoryId: "",
+          file: null,
+        });
+      } else {
+        throw new Error(result?.error)
+      }
     } catch (e) {
       console.error("Upload failed:", e);
+      
+    } finally {
       setIsUploading(false);
+      setUploadProgessStatus(0)
     }
   };
 
@@ -208,7 +225,17 @@ function UploadAsset({ categories }: UploadDialogProps) {
               accept="image/*"
             />
           </div>
-          <DialogFooter>
+
+          {
+            isUploading && uploadProgessStatus > 0 && (
+              <div className="mb-5 w-full bg-stone-100 rounded-full h-2">
+                <div className="bg-teal-500 h-2 rounded-full" style={{ width: `${uploadProgessStatus}%` }}>
+                  <p className="text-xs text-slate-500 mt-4 text-right">{ uploadProgessStatus}% upload</p>
+                </div>
+              </div>
+            )
+          }
+          <DialogFooter className="mt-6">
             <Button type="submit">
               <Upload className="mr-2 h-5 w-5" />
               Upload Asset

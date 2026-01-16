@@ -9,33 +9,38 @@ import { headers } from "next/headers";
 import { z } from "zod";
 
 const AssetSchema = z.object({
-  title: z.string(),
+  title: z.string().min(1, "Title is required"),
   description: z.string().optional(),
-  categoryId: z.number().positive("Please select a category"),
-  fileUrl: z.string().url("Invalid file Url"),
-  thumbnailUrl: z.string().url("Invalid file Url").optional(),
+  categoryId: z.coerce.number().positive("Please select a category"),
+  fileUrl: z.string().url("Invalid file URL"),
+  thumbnailUrl: z.string().url("Invalid thumbnail URL").optional(),
 });
 
 export async function getCategoriesAction() {
   try {
-    return db.select().from(category);
+    return await db.select().from(category);
   } catch (error) {
-    console.log(error);
+    console.error("Failed to fetch categories:", error);
+    return [];
   }
 }
 
-export async function uploadAsset(formData: FormData) {
+export async function uploadAssetAction(formData: FormData) {
   const session = await auth.api.getSession({
     headers: await headers(),
   });
+
   if (!session?.user) {
-    throw new Error("You must be logged in to upload asset");
+    return {
+      success: false,
+      error: "You must be logged in to upload an asset",
+    };
   }
 
   try {
     const validateFields = AssetSchema.parse({
       title: formData.get("title"),
-      description: formData.get("description"),
+      description: formData.get("description") || undefined,
       categoryId: formData.get("categoryId"),
       fileUrl: formData.get("fileUrl"),
       thumbnailUrl: formData.get("thumbnailUrl") || formData.get("fileUrl"),
@@ -57,24 +62,31 @@ export async function uploadAsset(formData: FormData) {
       success: true,
     };
   } catch (error) {
-    console.error(error);
+    console.error("Failed to upload asset:", error);
+
+    if (error instanceof z.ZodError) {
+      return {
+        success: false,
+        error: error.message,
+      };
+    }
+
     return {
       success: false,
-      error: "Failed to upload Asset",
+      error: "Failed to upload asset",
     };
   }
 }
 
 export async function getUserAssetsAction(userid: string) {
   try {
-    return db
+    return await db
       .select()
       .from(asset)
       .where(eq(asset.userId, userid))
       .orderBy(asset.createdAt);
   } catch (error) {
-      return [];
-      console.log(error);
-      
+    console.error("Failed to fetch user assets:", error);
+    return [];
   }
 }
