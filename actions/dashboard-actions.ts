@@ -94,7 +94,7 @@ export async function getUserAssetsAction(userid: string) {
 export async function getPublicAssetsAction(categoryId?: number) {
   try {
     //add multiple base conditions
-    let conditions = and(eq(asset.isApproved, "spproved"));
+    let conditions = and(eq(asset.isApproved, "approved"));
 
     if (categoryId) {
       conditions = and(conditions, eq(asset.categoryId, categoryId));
@@ -111,11 +111,32 @@ export async function getPublicAssetsAction(categoryId?: number) {
       .leftJoin(user, eq(asset.userId, user.id))
       .where(conditions);
 
-      return query
+
+    return query;
   } catch (error) {
     console.error(error);
-    return []
+    return [];
   }
 }
 
+export async function geAssetById(assetId: string) {
+  try {
+    const [result] = await db
+      .select({
+        asset: asset,
+        categoryname: category.name,
+        userName: user.name,
+        userImage: user.image,
+        userId: user.id,
+      })
+      .from(asset)
+      .leftJoin(category, eq(asset.categoryId, category.id))
+      .leftJoin(user, eq(asset.userId, user.id))
+      .where(eq(asset.id, assetId));
 
+    return result;
+  } catch (error) {
+    console.error(error);
+    return null;
+  }
+}
