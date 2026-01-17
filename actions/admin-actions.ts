@@ -2,7 +2,7 @@
 
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
-import { category, user } from "@/lib/db/schema";
+import { asset, category, user } from "@/lib/db/schema";
 import { eq, sql } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { headers } from "next/headers";
@@ -99,15 +99,116 @@ export async function deleteCategoryAction(categoryId: number) {
   try {
     await db.delete(category).where(eq(category.id, categoryId));
     revalidatePath("/admin/settings");
-        return {
-          success: true,
-          message: "Category Deleted Successfully",
-        };
+    return {
+      success: true,
+      message: "Category Deleted Successfully",
+    };
   } catch (error) {
     console.log(error);
     return {
       success: false,
       message: "Failed to delete category",
     };
+  }
+}
+
+export async function getTotalAssetsCountAction() {
+  const session = await auth.api.getSession({
+    headers: await headers(),
+  });
+
+  if (!session?.user || session.user.role !== "admin") {
+    throw new Error("Unauthorized");
+  }
+
+  try {
+    const result = await db
+      .select({ count: sql<number>`count(*)` })
+      .from(asset);
+    return result[0]?.count || 0;
+  } catch (error) {
+    console.log(error);
+    return 0;
+  }
+}
+
+export async function approveAssetAction(assetId: string) {
+  const session = await auth.api.getSession({
+    headers: await headers(),
+  });
+
+  if (!session?.user || session.user.role !== "admin") {
+    throw new Error("Unauthorized");
+  }
+
+  try {
+    await db
+      .update(asset)
+      .set({ isApproved: "approved", updatedAt: new Date() })
+      .where(eq(asset.id, assetId));
+    revalidatePath("/admin/asset-approval");
+
+    return {
+      success: true,
+    };
+  } catch (error) {
+    console.log(error);
+
+    return {
+      success: false,
+    };
+  }
+}
+
+export async function rejectAssetAction(assetId: string) {
+  const session = await auth.api.getSession({
+    headers: await headers(),
+  });
+
+  if (!session?.user || session.user.role !== "admin") {
+    throw new Error("Unauthorized");
+  }
+
+  try {
+    await db
+      .update(asset)
+      .set({ isApproved: "rejected", updatedAt: new Date() })
+      .where(eq(asset.id, assetId));
+    revalidatePath("/admin/asset-approval");
+
+    return {
+      success: true,
+    };
+  } catch (error) {
+    console.log(error);
+
+    return {
+      success: false,
+    };
+  }
+}
+
+export async function getpendingAssetsAction() {
+  const session = await auth.api.getSession({
+    headers: await headers(),
+  });
+
+  if (!session?.user || session.user.role !== "admin") {
+    throw new Error("Unauthorized");
+  }
+
+  try {
+    const pendingAssets = await db
+      .select({
+        asset: asset,
+        userName: user.name,
+      })
+      .from(asset)
+      .leftJoin(user, eq(asset.userId, user.id))
+      .where(eq(asset.isApproved, "pending"));
+
+    return pendingAssets;
+  } catch (error) {
+    console.log(error);
   }
 }

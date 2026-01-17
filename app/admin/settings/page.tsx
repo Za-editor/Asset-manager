@@ -1,4 +1,4 @@
-import { getAllCategorisAction, getTotalUsersCountAction } from "@/actions/admin-actions";
+import { getAllCategorisAction, getTotalAssetsCountAction, getTotalUsersCountAction } from "@/actions/admin-actions";
 import CategoryManager from "@/components/admin/category-manager";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Users } from "lucide-react";
@@ -6,8 +6,8 @@ import { Users } from "lucide-react";
 
 async function SettingsPage() {
 
-  const [categories, userCount] = await Promise.all([
-    getAllCategorisAction(), getTotalUsersCountAction()
+  const [categories, userCount, assetsCount] = await Promise.all([
+    getAllCategorisAction(), getTotalUsersCountAction(), getTotalAssetsCountAction()
   ])
   return (
     <div className="container py-10">
@@ -40,7 +40,7 @@ async function SettingsPage() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <p className="text-3xl font-bold text-teal-600">1000</p>
+            <p className="text-3xl font-bold text-teal-600">{assetsCount}</p>
           </CardContent>
         </Card>
       </div>
