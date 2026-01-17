@@ -14,7 +14,7 @@ import { Suspense } from "react";
 
 interface GalleryPageProps {
   searchParams: {
-    category?: string;
+    category?:  string;
   };
 }
 
@@ -40,9 +40,9 @@ async function GalleryPage({ searchParams }: GalleryPageProps) {
 export default GalleryPage;
 
 async function GalleryContent({ searchParams }: GalleryPageProps) {
-  const categoryId = searchParams.category
-    ? Number.parseInt(searchParams.category)
-    : undefined;
+  const params = await searchParams;
+
+  const categoryId = params.category ? Number(params.category) : undefined;
 
   const categories = await getCategoriesAction();
   const assets = await getPublicAssetsAction(categoryId);
@@ -77,7 +77,7 @@ async function GalleryContent({ searchParams }: GalleryPageProps) {
           </p>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {assets.map(({ asset, categoryName, Username }) => (
+            {assets.map(({ asset, categoryName, userName }) => (
               <Link
                 href={`/gallery/${asset.id}`}
                 key={asset.id}
@@ -90,11 +90,16 @@ async function GalleryContent({ searchParams }: GalleryPageProps) {
                     fill
                     className="object-cover transition-transform duration-500 group-hover:scale-105"
                   />
-                </div>
-                
-                <div className="absolute inset-0 bg-gradient-t-t from-black/70 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-                <div className="absolute bottom-0 left-0 right-0 p-4">
-                  <h3 className="">{ asset?.title}</h3>
+                  <div className="absolute inset-0 bg-linear-to-t from-black/70 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                  <div className="absolute bottom-0 left-0 right-0 p-4">
+                    <h3 className="text-white font-medium text-lg">
+                      {asset?.title}
+                    </h3>
+                    <div className="flex justify-between items-center mt-2">
+                      <span className="text-white/50 text-sm">{userName}</span>
+                      {categoryName && (<span className="bg-white/25 text-white text-xs px-2 py-1 rounded-full">{ categoryName}</span>)}
+                    </div>
+                  </div>
                 </div>
               </Link>
             ))}
