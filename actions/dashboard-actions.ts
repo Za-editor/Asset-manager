@@ -124,7 +124,7 @@ export async function getAssetByIdAction(assetId: string) {
     const [result] = await db
       .select({
         asset: asset,
-        categoryname: category.name,
+        categoryName: category.name,
         userName: user.name,
         userImage: user.image,
         userId: user.id,
