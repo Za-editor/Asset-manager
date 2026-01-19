@@ -9,7 +9,7 @@ import {
   uuid,
   integer,
 } from "drizzle-orm/pg-core";
-import { id } from "zod/v4/locales";
+
 
 // user management tables
 export const user = pgTable("user", {

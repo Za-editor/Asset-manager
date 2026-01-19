@@ -15,6 +15,13 @@
       "when": 1768332130931,
       "tag": "0001_omniscient_silk_fever",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1768795077040,
+      "tag": "0002_rare_wither",
+      "breakpoints": true
     }
   ]
 }
