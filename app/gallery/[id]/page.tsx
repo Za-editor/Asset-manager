@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
+import { createPaypalOrderActions } from "@/actions/payment-actions";
 
 interface GalleryDetailsPageProps {
   params: Promise<{
@@ -61,7 +62,19 @@ async function GalleryContent({ params }: GalleryDetailsPageProps) {
         .toUpperCase()
     : "U";
 
-  const hasPurchasedAsset = false
+  const hasPurchasedAsset = false;
+
+  async function handlePurchase() {
+    "use server";
+
+    const result = await createPaypalOrderActions((await params).id);
+    if (result.alreadyPurchased) {
+      redirect(`/gallery/${(await params).id}?success=true`);
+    }
+    if (result.approvalLink) {
+      redirect(result.approvalLink);
+    }
+  }
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="container px-4 py-12">
@@ -143,7 +156,7 @@ async function GalleryContent({ params }: GalleryDetailsPageProps) {
                         </a>
                       </Button>
                     ) : (
-                      <form>
+                      <form action={handlePurchase}>
                         <Button
                           type="submit"
                           className="w-full bg-black text-white h-12"
