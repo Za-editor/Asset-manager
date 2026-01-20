@@ -49,7 +49,7 @@ async function GalleryContent({ params }: GalleryDetailsPageProps) {
     notFound();
   }
 
-  const { asset, categoryName, userName, userImage, userId } = result;
+  const { asset, categoryName, userName, userId } = result;
 
   const isAuthor = session?.user.id === userId;
 
@@ -61,7 +61,7 @@ async function GalleryContent({ params }: GalleryDetailsPageProps) {
         .toUpperCase()
     : "U";
 
-  const hasPurchasedAsset = true
+  const hasPurchasedAsset = false
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="container px-4 py-12">
