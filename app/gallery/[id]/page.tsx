@@ -9,7 +9,8 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
-import { createPaypalOrderActions } from "@/actions/payment-actions";
+import { createStripeCheckoutSession } from "@/actions/payment-actions";
+
 
 interface GalleryDetailsPageProps {
   params: Promise<{
@@ -64,17 +65,17 @@ async function GalleryContent({ params }: GalleryDetailsPageProps) {
 
   const hasPurchasedAsset = false;
 
-  async function handlePurchase() {
-    "use server";
+async function handlePurchase() {
+  "use server";
 
-    const result = await createPaypalOrderActions((await params).id);
-    if (result.alreadyPurchased) {
-      redirect(`/gallery/${(await params).id}?success=true`);
-    }
-    if (result.approvalLink) {
-      redirect(result.approvalLink);
-    }
+  const result = await createStripeCheckoutSession((await params).id);
+  if (result.alreadyPurchased) {
+    redirect(`/gallery/${(await params).id}?success=true`);
   }
+  if (result.checkoutUrl) {
+    redirect(result.checkoutUrl);
+  }
+}
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="container px-4 py-12">
@@ -126,7 +127,7 @@ async function GalleryContent({ params }: GalleryDetailsPageProps) {
           {/* RIGHT */}
           <div className="lg:sticky lg:top-24 h-fit">
             <Card className="overflow-hidden border-0 shadow-lg rounded-xl py-0 gap-0">
-              <div className="bg-gradient-to-r from-gray-900 to-gray-800 p-6 text-white">
+              <div className="bg-linear-to-r from-gray-900 to-gray-800 p-6 text-white">
                 <h3 className="text-xl font-bold mb-2">Premium Asset</h3>
                 <div>
                   <span className="text-3xl font-bold">$5.00</span>

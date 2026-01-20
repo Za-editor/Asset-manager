@@ -3,11 +3,16 @@
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { asset, purchase } from "@/lib/db/schema";
-import { eq, and } from "drizzle-orm";
+import { eq, and, SQL } from "drizzle-orm";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
+import Stripe from "stripe";
 
-export async function createPaypalOrderActions(assetId: string) {
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
+  apiVersion: "2025-12-15.clover",
+});
+
+export async function createStripeCheckoutSession(assetId: string) {
   const session = await auth.api.getSession({
     headers: await headers(),
   });
@@ -25,7 +30,7 @@ export async function createPaypalOrderActions(assetId: string) {
     .select()
     .from(purchase)
     .where(
-      and(eq(purchase.assetId, assetId), eq(purchase.userId, session.user.id)),
+      and(eq(purchase.assetId, assetId), eq(purchase.userId, session.user.id))
     )
     .limit(1);
 
@@ -36,55 +41,38 @@ export async function createPaypalOrderActions(assetId: string) {
   }
 
   try {
-const response = await fetch(
-  `${process.env.PAYPAL_API_URL}/v2/checkout/orders`,
-  {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Accept: "application/json",
-      Authorization: `Basic ${Buffer.from(
-        `${process.env.PAYPAL_CLIENT_ID}:${process.env.PAYPAL_CLIENT_SECRET}`,
-      ).toString("base64")}`,
-    },
-    body: JSON.stringify({
-      intent: "CAPTURE",
-      purchase_units: [
+    const checkoutSession = await stripe.checkout.sessions.create({
+      payment_method_types: ["card"],
+      line_items: [
         {
-          reference_id: assetId,
-          description: `Purchase of ${getAsset.title}`,
-          amount: {
-            currency_code: "USD",
-            value: "5.00",
+          price_data: {
+            currency: "usd",
+            product_data: {
+ 
+             name: getAsset.title,
+              description: `Purchase of ${getAsset.title}`,
+            },
+            unit_amount: 500, // $5.00 in cents
           },
-          custom_id: `${session.user.id}|${assetId}`,
+          quantity: 1,
         },
       ],
-      application_context: {
-        return_url: `${process.env.APP_URL}/api/paypal/capture?assetId=${assetId}`,
-        cancel_url: `${process.env.APP_URL}/gallery/${assetId}?cancelled=true`,
+      mode: "payment",
+      success_url: `${process.env.APP_URL}/api/stripe/success?session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${process.env.APP_URL}/gallery/${assetId}?cancelled=true`,
+      metadata: {
+        assetId: assetId,
+        userId: session.user.id,
       },
-    }),
-  },
-);
+    });
 
-if (!response.ok) {
-  const text = await response.text();
-  console.error("PayPal API error:", text);
-  throw new Error("PayPal API request failed");
-}
-
-const data = await response.json();
-
-const approvalLink = data.links?.find((link: any) => link.rel === "approve");
-
-return {
-  orderId: data.id,
-  approvalLink: approvalLink?.href,
-};
-
+    return {
+      sessionId: checkoutSession.id,
+      checkoutUrl: checkoutSession.url,
+    };
   } catch (error) {
     console.error(error);
-    throw new Error("Failed to create paypal order");
+    throw new Error("Failed to create Stripe checkout session");
   }
 }
+
