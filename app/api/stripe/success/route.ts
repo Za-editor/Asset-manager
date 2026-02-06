@@ -4,9 +4,7 @@ import { eq, and } from "drizzle-orm";
 import { redirect } from "next/navigation";
 import Stripe from "stripe";
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: "2025-12-15.clover",
-});
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
 
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
