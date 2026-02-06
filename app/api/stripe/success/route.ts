@@ -22,7 +22,7 @@ export async function GET(req: Request) {
     if (session.payment_status === "paid") {
       const { assetId, userId } = session.metadata!;
 
-      // Check if already recorded
+   
       const existingPurchase = await db
         .select()
         .from(purchase)
